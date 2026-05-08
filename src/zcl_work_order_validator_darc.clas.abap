@@ -7,27 +7,27 @@ CLASS zcl_work_order_validator_darc DEFINITION
 
     METHODS validate_create_order
       IMPORTING
-        iv_customer_id   TYPE string
-        iv_technician_id TYPE string
-        iv_priority      TYPE string
-      RETURNING VALUE(rv_valid) TYPE abap_bool.
+                iv_customer_id   TYPE zde_customer_id_darc
+                iv_technician_id TYPE zde_technician_id
+                iv_priority      TYPE zde_priority_darc
+      RETURNING VALUE(rv_valid)  TYPE abap_bool.
 
     METHODS validate_update_order
       IMPORTING
-        iv_work_order_id TYPE string
-        iv_status        TYPE string
-      RETURNING VALUE(rv_valid) TYPE abap_bool.
+                iv_work_order_id TYPE zde_work_order_id
+                iv_status        TYPE zde_status_darc
+      RETURNING VALUE(rv_valid)  TYPE abap_bool.
 
     METHODS validate_delete_order
       IMPORTING
-        iv_work_order_id TYPE string
-        iv_status        TYPE string
-      RETURNING VALUE(rv_valid) TYPE abap_bool.
+                iv_work_order_id TYPE zde_work_order_id
+                iv_status        TYPE zde_status_darc
+      RETURNING VALUE(rv_valid)  TYPE abap_bool.
 
     METHODS validate_status_and_priority
       IMPORTING
-        iv_status   TYPE string
-        iv_priority TYPE string
+                iv_status       TYPE zde_status_darc
+                iv_priority     TYPE zde_priority_darc
       RETURNING VALUE(rv_valid) TYPE abap_bool.
 
   PRIVATE SECTION.
@@ -40,23 +40,23 @@ CLASS zcl_work_order_validator_darc DEFINITION
 
     METHODS check_customer_exists
       IMPORTING
-        iv_customer_id TYPE string
-      RETURNING VALUE(rv_exists) TYPE abap_bool.
+                iv_customer_id  TYPE zde_customer_id_darc
+      RETURNING VALUE(rv_valid) TYPE abap_bool.
 
     METHODS check_technician_exists
       IMPORTING
-        iv_technician_id TYPE string
-      RETURNING VALUE(rv_exists) TYPE abap_bool.
+                iv_technician_id TYPE zde_technician_id
+      RETURNING VALUE(rv_valid)  TYPE abap_bool.
 
     METHODS check_order_exists
       IMPORTING
-        iv_work_order_id TYPE string
-      RETURNING VALUE(rv_exists) TYPE abap_bool.
+                iv_work_order_id TYPE zde_work_order_id
+      RETURNING VALUE(rv_valid)  TYPE abap_bool.
 
     METHODS check_order_history
       IMPORTING
-        iv_work_order_id TYPE string
-      RETURNING VALUE(rv_exists) TYPE abap_bool.
+                iv_work_order_id TYPE zde_work_order_id
+      RETURNING VALUE(rv_valid)  TYPE abap_bool.
 
 ENDCLASS.
 
@@ -66,18 +66,24 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
 
   METHOD validate_create_order.
 
-    rv_valid = abap_false.
-
-    IF check_customer_exists( iv_customer_id ) = abap_false.
+    " Check if customer exists
+    DATA(lv_customer_exists) = check_customer_exists( iv_customer_id ).
+    IF lv_customer_exists IS INITIAL.
+      rv_valid = abap_false.
       RETURN.
     ENDIF.
 
-    IF check_technician_exists( iv_technician_id ) = abap_false.
+    "Check if technician exists
+    DATA(lv_technician_exists) = check_technician_exists( iv_technician_id ).
+    IF lv_technician_exists IS INITIAL.
+      rv_valid = abap_false.
       RETURN.
     ENDIF.
 
+    " Check if priority is valid
     IF iv_priority <> c_priority_a AND
        iv_priority <> c_priority_b.
+      rv_valid = abap_false.
       RETURN.
     ENDIF.
 
@@ -89,12 +95,14 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
 
   METHOD validate_update_order.
 
-    rv_valid = abap_false.
+    " Check if the work order exists
+    data(lv_order_exists) = check_order_exists( iv_work_order_id ).
+    if lv_order_exists is INITIAL.
+      rv_valid = abap_false.
+      return.
+    endif.
 
-    IF check_order_exists( iv_work_order_id ) = abap_false.
-      RETURN.
-    ENDIF.
-
+    "Check if the order status is editable
     IF iv_status <> c_status_pending AND
        iv_status <> c_status_completed.
       RETURN.
@@ -108,37 +116,45 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
 
   METHOD validate_delete_order.
 
-    rv_valid = abap_false.
+    " Check if the work order exists
+    data(lv_order_exists) = check_order_exists( iv_work_order_id ).
+    if lv_order_exists is INITIAL.
+      rv_valid = abap_false.
+      return.
+    endif.
 
-    IF check_order_exists( iv_work_order_id ) = abap_false.
-      RETURN.
-    ENDIF.
-
+    " Check if the order status is "PE"
     IF iv_status <> c_status_pending.
+        rv_valid = abap_false.
       RETURN.
     ENDIF.
 
-    IF check_order_history( iv_work_order_id ) = abap_true.
-      RETURN.
-    ENDIF.
+    " Check if the order has a history
+    data(lv_has_history) = check_order_history( iv_work_order_id ).
+    if lv_has_history is not initial.
+      rv_valid = abap_false.
+      return.
+    endif.
 
     rv_valid = abap_true.
 
-  ENDMETHOD.
+  endmethod.
 
 
 
   METHOD validate_status_and_priority.
 
-    rv_valid = abap_false.
-
+    "Validate the status value
     IF iv_status <> c_status_pending AND
        iv_status <> c_status_completed.
+         rv_valid = abap_false.
       RETURN.
     ENDIF.
 
+    "Validate the priority value
     IF iv_priority <> c_priority_a AND
        iv_priority <> c_priority_b.
+         rv_valid = abap_false.
       RETURN.
     ENDIF.
 
@@ -147,30 +163,19 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
   ENDMETHOD.
 
 
-
   METHOD check_customer_exists.
-    rv_exists = abap_true.
 
   ENDMETHOD.
-
-
-
-  METHOD check_technician_exists.
-    rv_exists = abap_true.
-
-  ENDMETHOD.
-
-
 
   METHOD check_order_exists.
-    rv_exists = abap_true.
 
   ENDMETHOD.
 
-
-
   METHOD check_order_history.
-    rv_exists = abap_false.
+
+  ENDMETHOD.
+
+  METHOD check_technician_exists.
 
   ENDMETHOD.
 
