@@ -165,17 +165,41 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
 
   METHOD check_customer_exists.
 
+    SELECT
+    SINGLE @abap_true
+    FROM ztcostumer_darc
+    WHERE customer_id = @iv_customer_id
+    INTO @rv_valid.
+
   ENDMETHOD.
+
+
+  METHOD check_technician_exists.
+
+    SELECT SINGLE @abap_true
+    FROM zttechnician
+    WHERE technician_id = @iv_technician_id
+    INTO @rv_valid.
+
+  ENDMETHOD.
+
 
   METHOD check_order_exists.
 
+    SELECT SINGLE @abap_true
+    FROM ztwork_ordr_darc
+    WHERE work_order_id = @iv_work_order_id
+    INTO @rv_valid.
+
   ENDMETHOD.
+
 
   METHOD check_order_history.
 
-  ENDMETHOD.
-
-  METHOD check_technician_exists.
+    SELECT SINGLE @abap_true
+    FROM ztw_o_history_Da
+    WHERE history_id = @iv_work_order_id
+    INTO @rv_valid.
 
   ENDMETHOD.
 
