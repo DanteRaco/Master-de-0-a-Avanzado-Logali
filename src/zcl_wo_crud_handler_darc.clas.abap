@@ -54,11 +54,10 @@ CLASS zcl_wo_crud_handler_darc IMPLEMENTATION.
 
     rv_valid = abap_false.
 
-    " Validacion de existencia de Customer_ID, Technician_ID y priority valid (A, B)
     DATA(lv_validation) = mo_validator->validate_create_order( iv_customer_id   = is_work_order-customer_id
                                                                iv_priority      = is_work_order-priority
                                                                iv_technician_id = is_work_order-technician_id ).
-    " Validacion status (PE, CO) y priority (A, B)
+
     DATA(lv_status_valid) = mo_validator->validate_status_and_priority( iv_status   = is_work_order-status
                                                                         iv_priority = is_work_order-priority ).
 
@@ -92,25 +91,21 @@ CLASS zcl_wo_crud_handler_darc IMPLEMENTATION.
     INTO CORRESPONDING FIELDS OF TABLE @rt_orders.
 
     rv_valid = xsdbool( lines( rt_orders ) > 0 ).
-
   ENDMETHOD.
-
 
   METHOD update_work_order.
 
     rv_valid = abap_false.
 
-    "Validacion status (PE, CO) / Work_Order_ID existente
     DATA(lv_validation) = mo_validator->validate_update_order( iv_status = is_work_order-status
                                                                iv_work_order_id = is_work_order-work_order_id ).
 
-    "Validacion status (PE, CO) y priority (A, B)
     DATA(lv_status_valid) = mo_validator->validate_status_and_priority( iv_status   = is_work_order-status
                                                                         iv_priority = is_work_order-priority ).
 
     IF lv_validation = abap_true AND lv_status_valid = abap_true.
 
-      "Actualizacion de status y priority
+
       UPDATE ztwork_ordr_darc
            SET status      = @is_work_order-status,
                priority    = @is_work_order-priority,
@@ -118,13 +113,9 @@ CLASS zcl_wo_crud_handler_darc IMPLEMENTATION.
          WHERE work_order_id = @is_work_order-work_order_id.
 
       IF sy-subrc = 0.
-
         rv_valid = abap_true.
-
       ENDIF.
-
     ENDIF.
-
   ENDMETHOD.
 
 
@@ -132,7 +123,7 @@ CLASS zcl_wo_crud_handler_darc IMPLEMENTATION.
 
     rv_valid = abap_false.
 
-    "Validacion Status (Solo estado Pendiente) y sin historial de modificaciones
+
     DATA(lv_validation) = mo_validator->validate_delete_order( iv_status = is_work_order-status
                                                                iv_work_order_id = is_work_order-work_order_id ).
 
