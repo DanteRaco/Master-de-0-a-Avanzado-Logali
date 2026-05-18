@@ -96,15 +96,45 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
   METHOD validate_update_order.
 
     " Check if the work order exists
-    data(lv_order_exists) = check_order_exists( iv_work_order_id ).
-    if lv_order_exists is INITIAL.
+    DATA(lv_order_exists) = check_order_exists( iv_work_order_id ).
+    IF lv_order_exists IS INITIAL.
       rv_valid = abap_false.
-      return.
-    endif.
+      RETURN.
+    ENDIF.
 
     "Check if the order status is editable
     IF iv_status <> c_status_pending AND
        iv_status <> c_status_completed.
+
+      rv_valid = abap_false.
+      RETURN.
+    ENDIF.
+
+      rv_valid = abap_true.
+
+  ENDMETHOD.
+
+
+
+  METHOD validate_delete_order.
+
+    " Check if the work order exists
+    DATA(lv_order_exists) = check_order_exists( iv_work_order_id ).
+    IF lv_order_exists IS INITIAL.
+      rv_valid = abap_false.
+      RETURN.
+    ENDIF.
+
+    " Check if the order status is "PE"
+    IF iv_status <> c_status_pending.
+      rv_valid = abap_false.
+      RETURN.
+    ENDIF.
+
+    " Check if the order has a history
+    DATA(lv_has_history) = check_order_history( iv_work_order_id ).
+    IF lv_has_history IS NOT INITIAL.
+      rv_valid = abap_false.
       RETURN.
     ENDIF.
 
@@ -114,47 +144,19 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
 
 
 
-  METHOD validate_delete_order.
-
-    " Check if the work order exists
-    data(lv_order_exists) = check_order_exists( iv_work_order_id ).
-    if lv_order_exists is INITIAL.
-      rv_valid = abap_false.
-      return.
-    endif.
-
-    " Check if the order status is "PE"
-    IF iv_status <> c_status_pending.
-        rv_valid = abap_false.
-      RETURN.
-    ENDIF.
-
-    " Check if the order has a history
-    data(lv_has_history) = check_order_history( iv_work_order_id ).
-    if lv_has_history is not initial.
-      rv_valid = abap_false.
-      return.
-    endif.
-
-    rv_valid = abap_true.
-
-  endmethod.
-
-
-
   METHOD validate_status_and_priority.
 
     "Validate the status value
     IF iv_status <> c_status_pending AND
        iv_status <> c_status_completed.
-         rv_valid = abap_false.
+      rv_valid = abap_false.
       RETURN.
     ENDIF.
 
     "Validate the priority value
     IF iv_priority <> c_priority_a AND
        iv_priority <> c_priority_b.
-         rv_valid = abap_false.
+      rv_valid = abap_false.
       RETURN.
     ENDIF.
 
@@ -197,8 +199,8 @@ CLASS zcl_work_order_validator_darc IMPLEMENTATION.
   METHOD check_order_history.
 
     SELECT SINGLE @abap_true
-    FROM ztw_o_history_Da
-    WHERE history_id = @iv_work_order_id
+    FROM ztw_o_history_da
+    WHERE work_order_id = @iv_work_order_id
     INTO @rv_valid.
 
   ENDMETHOD.

@@ -17,6 +17,7 @@ CLASS zcl_wo_crud_handler_darc DEFINITION
              description   TYPE ztwork_ordr_darc-description,
            END OF ty_work_order_report.
 
+
     TYPES tty_work_order_report TYPE STANDARD TABLE OF ty_work_order_report WITH EMPTY KEY.
 
     METHODS: constructor,
@@ -36,7 +37,7 @@ CLASS zcl_wo_crud_handler_darc DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
     DATA mo_validator TYPE REF TO zcl_work_order_validator_darc.
-    METHODS check_authority IMPORTING iv_activity         TYPE activ_auth
+    METHODS authority_check IMPORTING iv_role         TYPE activ_auth
                             RETURNING VALUE(rv_permitted) TYPE abap_bool.
 ENDCLASS.
 
@@ -111,8 +112,9 @@ CLASS zcl_wo_crud_handler_darc IMPLEMENTATION.
 
       "Actualizacion de status y priority
       UPDATE ztwork_ordr_darc
-           SET status   = @is_work_order-status,
-               priority = @is_work_order-priority
+           SET status      = @is_work_order-status,
+               priority    = @is_work_order-priority,
+               description = @is_work_order-description
          WHERE work_order_id = @is_work_order-work_order_id.
 
       IF sy-subrc = 0.
@@ -150,12 +152,15 @@ CLASS zcl_wo_crud_handler_darc IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD check_authority.
-    " iv_activity recibirá '01', '02', '03' o '06'
-    AUTHORITY-CHECK OBJECT 'ZAOWOOR_64'
-      ID 'ACTVT' FIELD iv_activity.
+  METHOD authority_check.
 
-    IF sy-subrc = 0.
+    AUTHORITY-CHECK OBJECT 'ZAO_WO_AU'
+      ID 'ZAF_WO_AUT' FIELD iv_role.
+
+    data(lv_create_granted) = cond #( when sy-subrc = 0  then abap_true
+                                                         else abap_false ).
+
+    IF lv_create_granted = abap_true.
       rv_permitted = abap_true.
     ELSE.
       rv_permitted = abap_false.
